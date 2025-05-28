@@ -1,0 +1,23 @@
+version: '3'
+
+tasks:
+  check:
+    desc: "Check if exists installed all needed"
+    platforms: [windows]  
+    cmds:
+      - cmd: docker --version
+      - cmd: docker-compose --version
+
+  test:
+    desc: "Execute testing"  
+    platforms: [windows]  
+    cmds:
+      - task: check
+      - cmd: go test ./...  
+
+  build-and-up:
+    desc: "Builds the Docker image and runs the container"
+    cmds:
+      - task: test    
+      - cmd: docker-compose build --no-cache
+      - cmd: docker-compose up -d

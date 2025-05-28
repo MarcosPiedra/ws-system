@@ -1,0 +1,8 @@
+Environment: "Development"
+LogLevel: "DEBUG"
+Web:
+  Port: ":5000"
+  Secret: "Secret"
+Redis:
+  Addr: "host.docker.internal:6379"
+  Channel: "ws-data"

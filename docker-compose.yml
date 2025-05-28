@@ -1,0 +1,38 @@
+services:
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379      
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+    command: ["redis-server"]
+  ws-publisher:
+      build:
+        dockerfile: ./ws-publisher/Dockerfile
+        context: ./
+      ports:
+        - 5000:5000
+      depends_on:
+        redis:
+          condition: service_healthy        
+  ws-ingestor:
+      build:
+        dockerfile: ./ws-ingestor/Dockerfile
+        context: ./
+      ports:
+        - 3000:3000
+      depends_on:
+        redis:
+          condition: service_healthy     
+  nginx:
+    image: nginx:1-alpine
+    build:
+      dockerfile: Dockerfile
+      context: ./ws-client    
+    ports:
+      - 8080:80    
+                
+

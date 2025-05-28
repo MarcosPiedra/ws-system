@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WS System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.5"></script>
+  <script src="https://unpkg.com/htmx.org/dist/ext/ws.js"></script>
+</head>
+<body class="h-screen overflow-hidden bg-gray-100 text-gray-900">
+
+<div id="authModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+  <div class="bg-white p-6 rounded shadow-lg w-80">
+    <h2 class="text-lg font-semibold mb-4">Login</h2>
+    <form hx-target="#authModal"
+          hx-swap="none"
+          onsubmit="return handleLogin(event)">
+      <div class="mb-4">
+        <label class="block text-sm">Username</label>
+        <input name="username" class="w-full px-3 py-2 border rounded" required />
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm">Password</label>
+        <input name="password" type="password" class="w-full px-3 py-2 border rounded" required />
+      </div>
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded w-full">Log in</button>
+    </form>
+  </div>
+</div>
+
+<div class="grid grid-cols-2 grid-rows-2 gap-4 h-full p-6">
+
+  <div id="s1" hx-ext="ws" ws-connect="http://localhost:3000/ws" class="bg-white p-4 rounded shadow">
+    <label class="block text-lg font-semibold mb-3">Ws-ingestor service</label>
+    <label class="block text-sm font-medium mb-1">Message</label>
+    <form id="form" ws-send>
+        <input type="text" name="message" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Short message..." />
+    </form>    
+    <span class="block mt-4 text-sm text-gray-500">Status</span>
+    <span id="statusA" class="inline-block px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">Not connected</span>
+  </div>
+
+  <div id="s2" hx-ext="ws" ws-connect="http://localhost:5000/ws" class="bg-white p-4 rounded shadow">
+    <label class="block text-lg font-semibold mb-3">Ws-publisher service</label>
+    <span class="block text-sm mb-2"><div id="txt">Waiting to receive a message</div></span>
+    <span class="block mt-4 text-sm text-gray-500">Status</span>
+    <span id="statusB" class="inline-block px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">Not connected</span>
+  </div>
+
+</div>
+
+<script>
+
+  // override WebSocket to use a specific protocol
+  htmx.createWebSocket = function(url) {
+    const t = localStorage.getItem("token");
+    var u = url;
+    if (t) {
+      u = `${url}?t=${t}`
+    }
+    return new WebSocket(u);
+  };
+
+  document.body.addEventListener('htmx:wsClose', function(evt) {
+    if (evt.detail.event.target.url == "ws://localhost:5000/ws") {
+      document.getElementById('statusB').className = "inline-block px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full"        
+      document.getElementById('statusB').textContent = "Not connected"
+    }      
+    if (evt.detail.event.target.url == "ws://localhost:3000/ws") {
+      document.getElementById('statusA').className = "inline-block px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full"
+      document.getElementById('statusA').textContent = "Not connected"
+    }
+  });
+
+  function handleLogin(e) {
+    e.preventDefault();
+    const form = e.target;
+    const data = {
+      user: form.username.value,
+      pass: form.password.value
+    };
+
+    fetch('http://localhost:3000/login', {
+      method: 'POST',
+      credentials: "include",
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(async res => {
+      if (!res.ok) return alert('Login failed');
+      const result = await res.json();
+      const token = result.token;
+
+      localStorage.setItem("token", token);
+/*
+      var ele = document.getElementById('s1');
+      var url = `${ele.getAttribute('ws-connect')}?t=${token}`;
+      ele.setAttribute('ws-connect',url)
+
+      ele = document.getElementById('s2');
+      var url = `${ele.getAttribute('ws-connect')}?t=${token}`;
+      ele.setAttribute('ws-connect',url)
+
+      console.log(ele);
+*/
+      // Hide modal
+      document.getElementById('authModal').style.display = 'none';
+    });
+
+    return false;
+  }
+</script>
+
+</body>
+</html>
