@@ -11,7 +11,7 @@
 ### 🔹 `task test`
 Runs unit and integration tests.
 
-### 🔹 `docker-compose up`
+### 🔹 `task build-and-up`
 Starts the system.  
 Access the web interface at: [http://localhost:8080](http://localhost:8080)
 
